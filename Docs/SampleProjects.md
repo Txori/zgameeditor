@@ -30,7 +30,7 @@ Follows the description of some of the sample projects that are included in ZGam
 
 Arena style shooting game with abstract graphics.
 
-![&nbsp;](proj-zblast.png)
+![ZBlast](proj-zblast.png)
 
 ## FpsDemo
 
