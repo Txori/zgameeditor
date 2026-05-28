@@ -1,4 +1,4 @@
-# Help Contents
+# Help Contents {#Index}
 
 ![ZGE Logo](pic/zge_logo.png)
 
