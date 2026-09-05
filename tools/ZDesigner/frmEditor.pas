@@ -5426,16 +5426,21 @@ begin
 
     if F.ShowModal=mrCancel then
       Exit;
-    Self.ZApp.SetString('AndroidPackageName',AnsiString(F.PackageNameEdit.Text));
-    Self.ZApp.SetString('Caption',AnsiString(F.AppNameEdit.Text));
-    Self.ZApp.SetString('AndroidVersionName',AnsiString(F.VersionNameEdit.Text));
-    Self.ZApp.AndroidVersionNumber := StrToInt(F.VersionNumberEdit.Text);
-    Self.ZApp.AndroidPortrait := F.OrientationComboBox.ItemIndex;
-
-    SdkChanged := Self.ZApp.AndroidSdk <> F.AndroidVersionComboBox.ItemIndex;
-    Self.ZApp.AndroidSdk := F.AndroidVersionComboBox.ItemIndex;
-
-    Self.SetFileChanged(True);
+    if (String(Self.ZApp.AndroidPackageName) <> F.PackageNameEdit.Text) or
+       (String(Self.ZApp.Caption) <> F.AppNameEdit.Text) or
+       (String(Self.ZApp.AndroidVersionName) <> F.VersionNameEdit.Text) or
+       (Self.ZApp.AndroidVersionNumber <> StrToInt(F.VersionNumberEdit.Text)) or
+       (Self.ZApp.AndroidPortrait <> F.OrientationComboBox.ItemIndex) or
+       SdkChanged then
+    begin
+      Self.ZApp.SetString('AndroidPackageName',AnsiString(F.PackageNameEdit.Text));
+      Self.ZApp.SetString('Caption',AnsiString(F.AppNameEdit.Text));
+      Self.ZApp.SetString('AndroidVersionName',AnsiString(F.VersionNameEdit.Text));
+      Self.ZApp.AndroidVersionNumber := StrToInt(F.VersionNumberEdit.Text);
+      Self.ZApp.AndroidPortrait := F.OrientationComboBox.ItemIndex;
+      Self.ZApp.AndroidSdk := F.AndroidVersionComboBox.ItemIndex;
+      Self.SetFileChanged(True);
+    end;
   finally
     F.Free;
   end;
