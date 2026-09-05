@@ -451,7 +451,7 @@ var
 {$endif}
   Now : single;
 
-  {$if not (defined(minimal) or defined(ZgeViz))}
+  {$if defined(zlog) and (not defined(ZgeViz))}
   procedure InDumpDebugInfo;
   var
     I,J : integer;
@@ -496,7 +496,7 @@ begin
       FpsCounter := FpsFrames / (Time-FpsTime);
       FpsFrames := 0;
       FpsTime := Time;
-      {$if not (defined(minimal) or defined(ZgeViz))}
+      {$if defined(zlog) and (not defined(ZgeViz))}
       InDumpDebugInfo;
       {$endif}
     end;
@@ -1073,12 +1073,14 @@ begin
     SymTab.Add('CurrentModel',Model);
 
   SymTab.Add('this',C);
+  Platform_EnterMutex(VoicesMutex);
   try
     Compiler.Compile(Self,C,Expr.ExpressionValue,SymTab,Prop.ReturnType,ZcGlobalNames,Prop.ExpressionKind);
     {$IFDEF DEBUG}
     //if not (C is TZExternalLibrary) then ZLog.GetLog(Self.ClassName).Write(Compiler.CompileDebugString);
     {$ENDIF}
   finally
+    Platform_LeaveMutex(VoicesMutex);
     if Assigned(Model) then
       SymTab.Remove('CurrentModel');
     SymTab.Remove('this');

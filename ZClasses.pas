@@ -71,7 +71,8 @@ type
  SampleClassId,SampleExpressionClassId,SampleImportClassId,
  SteeringControllerClassId,SteeringBehaviourClassId,
  ZFileClassId,FileActionClassId,FileMoveDataClassId,
- ThreadClassId,SpriteSheetClassId,TileSetClassId,RenderTileClassId
+ ThreadClassId,SpriteSheetClassId,TileSetClassId,RenderTileClassId,
+ AudioBufferClassId
  {$ifndef minimal}
  ,ExpIDEFuncCallClassId
  ,AnyComponentClassId  //Used by the compiler to parse "Component" datatype
@@ -262,7 +263,7 @@ type
   end;
 
   TExpressionKind = (ekiNormal,ekiLibrary,ekiGetValue,ekiGetPointer,ekiBitmap,
-    ekiMesh,ekiThread,ekiGetStringValue);
+    ekiMesh,ekiThread,ekiGetStringValue,ekiFillAudioBuffer);
 
   PZBinaryPropValue = ^TZBinaryPropValue;
   TZBinaryPropValue = record
@@ -860,7 +861,7 @@ begin
   {$ifdef extra_gc_checks} //These checks are very inefficient so dont't enable by default even in debug build
   if mh_Targets.IndexOf(P)>-1 then
   begin
-    GetLog('MH').Warning('Add target already in list');
+    ZHalt('Add target already in list');
     Exit;
   end;
   {$endif}
@@ -874,7 +875,7 @@ begin
   {$ifdef extra_gc_checks}
   if mh_Targets.IndexOf(P)=-1 then
   begin
-    GetLog('MH').Warning('Remove target not found');
+    ZHalt('Remove target not found');
     Exit;
   end;
   {$endif}
@@ -1600,6 +1601,11 @@ begin
           Value := GetProperty(Prop);
           Value.ComponentListValue.DesignerReset;
         end;
+      zptExpression :
+        begin
+          Value := GetProperty(Prop);
+          Value.ExpressionValue.Code.DesignerReset;
+        end;
     end;
   end;
 end;
@@ -1968,7 +1974,9 @@ procedure TZComponentManager.SaveXml(Component: TZComponent; FileName: string);
 var
   Stream : TZOutputStream;
 begin
+  {$ifdef zlog}
   ZLog.GetLog(Self.ClassName).Write('Saving: ' + FileName);
+  {$endif}
   Stream := SaveXmlToStream(Component) as TZOutputStream;
   try
     Stream.SaveToFile(FileName);
@@ -2642,7 +2650,9 @@ begin
         zptFloat,zptScalar :
           if IsNan(Value.FloatValue) then
           begin
+            {$ifdef zlog}
             ZLog.GetLog(Self.ClassName).Warning('NaN value for property: ' + Prop.Name);
+            {$endif}
             V := '0';
           end
           else
@@ -3176,7 +3186,7 @@ end;
 
 procedure TZXmlReader.LoadFromFile(const FileName: string);
 begin
-  {$ifndef zgeviz}
+  {$if defined(zlog) and (not defined(zgeviz))}
   ZLog.GetLog(Self.ClassName).Write('Loading: ' + FileName);
   {$endif}
   ExternalSymTab := False;
@@ -3392,7 +3402,9 @@ var
           L.Add('X');
         L.Delimiter := '.';
         Result := L.DelimitedText;
+        {$ifdef zlog}
         GetLog(Self.ClassName).Write(String('Patched propref: ' + S + ' -> ' + Result) );
+        {$endif}
         L.Free;
       end;
     end;
@@ -3591,7 +3603,9 @@ begin
                             InDecodeBinary(String(Xml.CurContent),Value.BinaryValue);
                             C.SetProperty(NestedProp,Value);
                           except
+                            {$ifdef zlog}
                             ZLog.GetLog(Self.ClassName).Write('*** Failed to read binary property: ' + String(C.Name));
+                            {$endif}
                           end;
                         end;
                     end;
@@ -3635,7 +3649,9 @@ begin
       if ExternalSymTab then
       begin
         //When copy/paste, allow unknown references. They will be nil.
+        {$ifdef zlog}
         ZLog.GetLog(Self.ClassName).Write('Unknown reference: ' + Fix.Name);
+        {$endif}
         FillChar(Value,SizeOf(Value),0);
         Fix.Obj.SetProperty(Fix.Prop,Value);
         Continue;
@@ -3844,7 +3860,7 @@ var
   NewContent : TContent;
   {$endif}
 begin
-  {$ifndef minimal}
+  {$if defined(zlog) and (not defined(zgeviz))}
   if Producers.Count>0 then
     ZLog.GetLog(Self.ClassName).BeginTimer;
   {$endif}
@@ -3893,7 +3909,7 @@ begin
 //  FillChar(GlobalContent,SizeOf(GlobalContent),0);
   GlobalContent := Save;
 
-  {$if (not defined(minimal)) and (not defined(zgeviz))}
+  {$if defined(zlog) and (not defined(zgeviz))}
   if (Producers.Count>0) and Self.HasZApp and (not ZApp.DesignerIsRunning) and (RefreshDepth=0) then
     ZLog.GetLog(Self.ClassName).EndTimer('Refresh: ' + String(GetDisplayName));
   {$endif}
@@ -4283,7 +4299,7 @@ procedure TZThreadComponent.TUserThread.Execute;
 var
   Env : TExecutionEnvironment;
 begin
-  {$ifndef minimal}
+  {$ifdef zlog}
   Inc(Owner.ZApp.LiveThreadCount);
   GetLog(Self.ClassName).Write('Starting thread, parameter: ' + IntToStr(Self.Parameter));
   {$endif}
@@ -4293,8 +4309,7 @@ begin
 
   ZExpressions.RunCode(Owner.Expression.Code,@Env);
 
-
-  {$ifndef minimal}
+  {$ifdef zlog}
   Dec(Owner.ZApp.LiveThreadCount);
   GetLog(Self.ClassName).Write('Exiting thread, parameter: ' + IntToStr(Self.Parameter));
   {$endif}

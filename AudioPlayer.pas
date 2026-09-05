@@ -220,20 +220,14 @@ procedure DesignerStopAllAudio;
 
 implementation
 
-uses ZPlatform,ZMath,ZClasses,AudioComponents;
-
+uses ZPlatform,ZMath,ZClasses,AudioComponents,ZApplication;
 
 const
   DelayBufferSampleCount = 2 * AudioRate;  //2 seconds delay
-
-  //Antal bits för hur många steg channel volume går i
-  ChannelVolBits = 6;
-
   VoiceFullRange = 2.0;
 
 var
   Voices : array[0..MaxVoices-1] of TVoiceEntry;
-
   Channels : array[0..MaxChannels-1] of TChannel;
   //Buffer where the voices for each channel are rendered before mix with mixbuffer
   ChannelBuffer : array[0..ModulateFrameCount-1] of TSoundMixUnit;
@@ -463,7 +457,6 @@ begin
   if V.SampleData<>nil then
   begin
     //440 / (22050 * (22050/8363))
-//    V.SampleStep := Round(V.Osc1.Frequency / (AudioRate * (AudioRate/8363)) * (1 shl SamplePosPBits));
     //11025 /  (11025 * (AudioRate/11025) ))
     V.SampleStep := V.Osc1.Frequency / AudioRate;
   end;
@@ -506,9 +499,6 @@ var
   VoiceBuffer : array[0..ModulateFrameCount-1] of TSoundMixUnit;
 begin
   //Write to voice buffer
-
-  //Voice beräknas med VoicePBits precision
-  //MixPBits är för högt och ger integer overflow
 
   //Måste render även om noll volym, annars blir det klick vid avslut
   //pga att filtret inte får jobba.
@@ -869,6 +859,7 @@ var
   Finished : boolean;
   Channel : PChannel;
   VBuf : PSoundMixUnit;
+  TempBuffer : array[0..ModulateFrameCount-1] of TSoundMixUnit;
 begin
   ModulateCrossOvers := (RenderCounter+FrameCount) div ModulateFrameCount;
   if ModulateCrossOvers>0 then
@@ -891,6 +882,12 @@ begin
       Inc(Channel);
     end;
 
+    if Assigned(CurrentAudioBuffer) then
+    begin
+      FillChar(TempBuffer, SizeOf(TempBuffer), 0);
+      CurrentAudioBuffer.CallFillAudioBuffer(@TempBuffer, ModulateCount);
+      AddToMixBuffer(@TempBuffer,Buf,ModulateCount);
+    end;
 
     if MasterVolume<1.0 then
     begin
