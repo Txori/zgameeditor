@@ -57,6 +57,7 @@ public class Zge extends GLSurfaceView
     private native int NativeGetGLBase();
     private native void NativeInitAppFromSDCard();
 
+    private static boolean zgeAppLoaded;
     private boolean IsDestroy;
     private CRenderer Renderer;
     private InputMethodManager InputManager;
@@ -90,17 +91,22 @@ public class Zge extends GLSurfaceView
         }
         Renderer = new CRenderer();
         setRenderer( Renderer );
+        if (android.os.Build.VERSION.SDK_INT >= 11)
+            setPreserveEGLContextOnPause(true);
 
         setFocusableInTouchMode( true );
     }
 
     private void initZApp() {
+        if (zgeAppLoaded)
+            return;
         //Tries to load embedded data. If none present, then it will look for zzdc.dat on external path instead
         byte[] b = openAssetFile("assets/zzdc.dat");
         if(b.length!=0)
             NativeSetDataContent(b);
         else
             NativeInitAppFromSDCard();
+        zgeAppLoaded = true;
     }
 
     //Called from native
@@ -139,8 +145,6 @@ public class Zge extends GLSurfaceView
     public void onStop() {
         Log.i("ZgeAndroid", "stop");
         NativeActivate( false );
-        //Call drawframe to update zge and give expressions a chance to catch stop event
-        NativeDrawFrame();
     }
 
     public void onStart() {
@@ -151,13 +155,17 @@ public class Zge extends GLSurfaceView
     @Override
     public void onPause()
     {
+        Log.i("ZgeAndroid", "pause");
+        NativeActivate( false );
         super.onPause();
     }
 
     @Override
     public void onResume()
     {
+        Log.i("ZgeAndroid", "resume");
         super.onResume();
+        NativeActivate( true );
     }
 
     @Override
@@ -224,6 +232,7 @@ public class Zge extends GLSurfaceView
 
     public void Finish()
     {
+        zgeAppLoaded = false;
         NativeDestroy();
         ((Activity)getContext()).finish();
         System.exit( 0 );
