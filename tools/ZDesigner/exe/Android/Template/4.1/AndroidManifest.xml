@@ -15,7 +15,9 @@
         <activity
             android:label="$title$"
             android:name="org.zgameeditor.ZgeActivity"
-            android:configChanges="screenLayout|orientation|keyboardHidden|fontScale"
+            android:configChanges="screenLayout|orientation|keyboardHidden|fontScale|keyboard|screenSize"
+            android:launchMode="singleTask"
+            android:alwaysRetainTaskState="true"
             android:screenOrientation="$orientation$" >
             <intent-filter >
                 <action android:name="android.intent.action.MAIN" />
