@@ -5426,6 +5426,9 @@ begin
 
     if F.ShowModal=mrCancel then
       Exit;
+
+    SdkChanged := Self.ZApp.AndroidSdk <> F.AndroidVersionComboBox.ItemIndex;
+
     if (String(Self.ZApp.AndroidPackageName) <> F.PackageNameEdit.Text) or
        (String(Self.ZApp.Caption) <> F.AppNameEdit.Text) or
        (String(Self.ZApp.AndroidVersionName) <> F.VersionNameEdit.Text) or
